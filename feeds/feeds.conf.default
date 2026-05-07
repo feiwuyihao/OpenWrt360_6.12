@@ -10,6 +10,7 @@ src-git extras https://github.com/openwrt-ipq60xx/extras.git
 src-git sqm-scripts-nss https://github.com/openwrt-ipq60xx/sqm-scripts-nss.git
 src-git kenzo https://github.com/kenzok8/openwrt-packages
 src-git mihomo https://github.com/morytyann/OpenWrt-mihomo.git
+src-git starvpn https://github.com/yuguod/starvpn.git
 #src-git video https://github.com/openwrt/video.git
 #src-git targets https://github.com/openwrt/targets.git
 #src-git oldpackages http://git.openwrt.org/packages.git
