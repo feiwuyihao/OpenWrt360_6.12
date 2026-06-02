@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       WRT_TARGET:
-        description: '编译平台. [ JDCloud, IPQ60XX, IPQ807X, RAX3000M, x86-64 ]'
+        description: '编译平台. [ JDCloud, IPQ50XX, IPQ60XX, IPQ807X, RAX3000M, x86-64 ]'
         required: true
         type: string
         default: 'IPQ60XX'
@@ -30,7 +30,7 @@ on:
         required: true
         type: choice
         description: '配置文件名'
-        options: [ 'JDCloud', 'IPQ60XX', 'IPQ807X', 'RAX3000M', 'x86-64' ]
+        options: [ 'JDCloud', 'IPQ50XX', 'IPQ60XX', 'IPQ807X', 'RAX3000M', 'x86-64' ]
       WRT_SOURCE:
         description: '源码仓库名'
         required: true
@@ -136,6 +136,7 @@ jobs:
           echo "DEVICE_TARGET=$DEVICE_TARGET" >> $GITHUB_ENV
           DEVICE_SUBTARGET=$(cat .config | grep CONFIG_TARGET_SUBTARGET | awk -F '"' '{print $2}')
           echo "DEVICE_SUBTARGET=$DEVICE_SUBTARGET" >> $GITHUB_ENV
+          
           # toolchain缓存文件名
           CACHE_NAME_PREFIX="$SOURCE_REPO-${REPO_BRANCH#*-}-$DEVICE_TARGET-$DEVICE_SUBTARGET-cache"
           echo "CACHE_NAME_PREFIX=$CACHE_NAME_PREFIX" >> $GITHUB_ENV
@@ -243,10 +244,30 @@ jobs:
           cd $OPENWRT_PATH/bin/targets/*/*
           cat config.buildinfo
           cat sha256sums
-          cp $OPENWRT_PATH/.config build.config
+          cp $OPENWRT_PATH/.config ./build.config
           mv -f $OPENWRT_PATH/bin/packages/*/*/*.*pk packages
-          tar -zcf Packages.tar.gz packages
+          tar -zcf ./Packages.tar.gz packages
           rm -rf packages feeds.buildinfo version.buildinfo
+          WIFI=""
+          if [ $WRT_TARGET == "JDCloud" ]; then
+            WRT_TARGET="IPQ60XX"
+            WIFI="-WiFi"
+          fi
+          if [ $WRT_TARGET == "JDCloud.NoWiFi" ]; then
+            WRT_TARGET="IPQ60XX"
+            WIFI="-NoWiFi"
+          fi
+          for FILE in $(find ./ -type f -iname "*$WRT_TARGET*") ; do
+            EXT=$(basename $FILE | cut -d '.' -f 2-)
+            FULL_NAME=$(basename $FILE | cut -d '.' -f 1)
+            PREFIX_NAME=$(basename $FILE | cut -d '.' -f 1 | grep -io ".*\($WRT_TARGET\)" | cut -d '-' -f -2)
+            SUFFIX_NAME=$(basename $FILE | cut -d '.' -f 1 | grep -io "\($WRT_TARGET\).*")
+            NEW_FILE="$PREFIX_NAME"-"R$FILE_DATE$WIFI"-"$SUFFIX_NAME"."$EXT"
+            mv -f $FILE ./$NEW_FILE
+          done
+          echo "==============================="
+          ls $OPENWRT_PATH/bin/targets/*/*
+          echo "==============================="
           echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
 
       - name: Upload Firmware To Release
